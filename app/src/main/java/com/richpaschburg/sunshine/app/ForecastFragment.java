@@ -1,5 +1,6 @@
 package com.richpaschburg.sunshine.app;
 
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -48,7 +49,7 @@ public class ForecastFragment extends Fragment {
         int id = item.getItemId();
         if (id == R.id.action_refresh) {
             FetchWeatherTask weatherTask = new FetchWeatherTask();
-            weatherTask.execute();
+            weatherTask.execute("95051");
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -87,22 +88,41 @@ public class ForecastFragment extends Fragment {
 
     }
 
-    public class FetchWeatherTask extends AsyncTask<Void, Void, Void> {
+    public class FetchWeatherTask extends AsyncTask<String, Void, Void> {
 
         private final String LOG_TAG = FetchWeatherTask.class.getSimpleName();
 
         @Override
-        protected Void doInBackground(Void... params) {
+        protected Void doInBackground(String... params) {
 
             HttpURLConnection urlConnection = null;
             BufferedReader reader = null;
 
             // Will contain the raw JSON response as a String.
             String forecastJsonStr = null;
+            // String zip = "95051";
+            Log.v(LOG_TAG,"zip code = " + params[0]);
+            String location = params[0] + ",us";
 
             try
             {
-                URL url = new URL("http://api.openweathermap.org/data/2.5/forecast/daily?q=Santa%20Clara,us&mode=json&units=metric&cnt=7");
+                Uri.Builder builder = new Uri.Builder();
+                builder.scheme("http")
+                        .authority("api.openweathermap.org")
+                        .appendPath("data")
+                        .appendPath("2.5")
+                        .appendPath("forecast")
+                        .appendPath("daily")
+                        .appendQueryParameter("zip", location)
+                        .appendQueryParameter("mode", "json")
+                        .appendQueryParameter("units", "metric")
+                        .appendQueryParameter("cnt","7");
+                String myUrl = builder.build().toString();
+
+                Log.v(LOG_TAG, "Forecast URL: " + myUrl);
+
+                URL url = new URL(myUrl);
+                // url = new URL("http://api.openweathermap.org/data/2.5/forecast/daily?zip=95051,us&mode=json&units=metric&cnt=7");
 
                 urlConnection = (HttpURLConnection) url.openConnection();
                 urlConnection.setRequestMethod("GET");
@@ -128,7 +148,7 @@ public class ForecastFragment extends Fragment {
                 }
                 forecastJsonStr = buffer.toString();
 
-                Log.e(LOG_TAG, "Forecast JSON String: " + forecastJsonStr);
+                Log.v(LOG_TAG, "Forecast JSON String: " + forecastJsonStr);
             }
             catch (IOException e)
             {
